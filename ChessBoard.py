@@ -1,169 +1,104 @@
-import turtle
+import pygame
 # import random
-# 线宽
-LINE_WIDTH = 1
+# 数字标示宽度（左边及上边）
+Num_Mark_Width = 50
+# 数字标示字体大小
+NUMBER_MARK_SIZE = 36
 # 格子宽度（包含框宽度）
-CELL_WIDTH = 60
-# 颜色
-BOARD_COLOR = "white"
+CELL_WIDTH = 0
+# 浅色格子颜色
+LIGHT_COLOR = pygame.Color("white")
+# 深色格子颜色
+DARK_COLOR = pygame.Color("black")
 # 背景色
-BG_COLOR = "black"
-# 是否在棋盘中填入数字
-write_2_cell = False
+BG_COLOR = pygame.Color("black")
+# 边框色
+BORDER_COLOR = pygame.Color("pink")
+# 边框宽度
+BORDER_WIDTH = 4
 # 棋盘大小
-BOARD_SIZE = 8
+BOARD_SIZE = 0
 CELL_COUNT = BOARD_SIZE * BOARD_SIZE
+# 棋盘尺寸
+SQUARE_SIZE = 0
 
 
-# 画格子
-def draw_cell(draw_pen: turtle.Pen, fill_color: bool):
-    t = draw_pen.position()
-    h = draw_pen.heading()
-    c = draw_pen.fillcolor()
-    d = draw_pen.isdown()
-    if fill_color is True:
-        draw_pen.fillcolor(BOARD_COLOR)
-    else:
-        draw_pen.fillcolor(BG_COLOR)
-    draw_pen.up()
-    draw_pen.goto(t[0] - CELL_WIDTH/2, t[1] + CELL_WIDTH / 2)
-    draw_pen.setheading(0)
-    draw_pen.down()
-
-    draw_pen.begin_fill()
-    for _ in range(4):
-        draw_pen.forward(CELL_WIDTH)
-        draw_pen.right(90)
-    draw_pen.end_fill()
-    draw_pen.up()
-    draw_pen.setposition(t)
-    draw_pen.setheading(h)
-    draw_pen.fillcolor(c)
-    if d:
-        draw_pen.down()
-        
-                
 # 设置棋盘
-def draw_blank_chess_board(draw_pen: turtle.Pen, board_size):
-    global BOARD_SIZE
+def draw_blank_chess_board(screen: pygame.Surface, board_size):
+    global BOARD_SIZE, SQUARE_SIZE, CELL_WIDTH
     BOARD_SIZE = board_size
-    turtle.bgcolor(BG_COLOR)
-    draw_pen.speed(0)
-    draw_pen.pencolor(BOARD_COLOR)
-    draw_pen.fillcolor(BOARD_COLOR)
-    draw_pen.pensize(LINE_WIDTH)
-    draw_pen.hideturtle()
-    board_long = BOARD_SIZE * CELL_WIDTH
-    start_x = -1 * board_long / 2
-    start_y = board_long / 2
-    # 画棋框
-    draw_pen.up()
-    draw_pen.setposition(start_x - LINE_WIDTH, start_y + LINE_WIDTH)
-    draw_pen.down()
-    for _ in range(4):
-        draw_pen.forward(board_long + LINE_WIDTH * 2)
-        draw_pen.right(90)
-    
+    SQUARE_SIZE = max(min(screen.get_size()) - Num_Mark_Width - BORDER_WIDTH * 2, 0)
+    CELL_WIDTH = SQUARE_SIZE // board_size
     # 画格子
-    start_x = start_x + CELL_WIDTH / 2
-    start_y = start_y - CELL_WIDTH / 2
-    fill_color = False
-    draw_pen.up()
-    turtle.tracer(0)
-    for x in range(BOARD_SIZE):
-        draw_pen.setposition(start_x, start_y - CELL_WIDTH * x)
-        for y in range(BOARD_SIZE):
-            if (x + y) % 2 == 0:
-                # 如果x+y是偶数，则格子是涂色格
-                fill_color = True 
+    for row in range(BOARD_SIZE):
+        for col in range(BOARD_SIZE):
+            x = Num_Mark_Width + BORDER_WIDTH + col * CELL_WIDTH
+            y = Num_Mark_Width + BORDER_WIDTH + row * CELL_WIDTH
+            if (row + col) % 2 == 0:
+                color = LIGHT_COLOR  # 浅色格子
             else:
-                fill_color = False
-            # if y != 0:
-            #     fill_color = not fill_color
-            draw_cell(draw_pen, fill_color)
-            draw_pen.forward(CELL_WIDTH)
-    draw_pen.down()
-    turtle.update()
-    # turtle.tracer(1)
+                color = DARK_COLOR  # 深色格子
+            pygame.draw.rect(screen, color, 
+                             pygame.Rect(x, y, CELL_WIDTH, CELL_WIDTH))
+    # 画框
+    border_rect = pygame.Rect(Num_Mark_Width, Num_Mark_Width,
+                              SQUARE_SIZE + BORDER_WIDTH * 2,
+                              SQUARE_SIZE + BORDER_WIDTH * 2)
+    pygame.draw.rect(screen, BORDER_COLOR, border_rect, BORDER_WIDTH)
     # 标行列号
+    # 设置字体和字号
+    font = pygame.font.Font(None, NUMBER_MARK_SIZE)
     for t in range(BOARD_SIZE):
+        # 创建文本对象
+        text = font.render(str(t + 1), True, LIGHT_COLOR)
+        # 获取文本对象的矩形
+        text_rect = text.get_rect()
         # 行号
-        draw_pen.up()
-        # draw_pen.goto(start_x - CELL_WIDTH, 
-        #               start_y - (CELL_WIDTH + LINE_WIDTH) * t + CELL_WIDTH)
-        draw_pen.goto(start_x - CELL_WIDTH, start_y - CELL_WIDTH * t - 15)
-        draw_pen.down()
-        # draw_pen.dot(3, "red")
-        draw_pen.write(t + 1,
-                       font=('Times New Roman', 20, 'bold'),
-                       align="center")
+        # 设置文本对象的位置
+        text_rect.center = (Num_Mark_Width // 2, 
+                            Num_Mark_Width + CELL_WIDTH // 2 + t * CELL_WIDTH)
+        # 将文本对象绘制到屏幕上
+        screen.blit(text, text_rect)
         # 列号
-        draw_pen.up()
-        draw_pen.goto(start_x + CELL_WIDTH * t, start_y + CELL_WIDTH - 15)
-        draw_pen.down()
-        draw_pen.write(t + 1,
-                       font=('Times New Roman', 20, 'bold'),
-                       align="center")
-    turtle.update()
+        # 设置文本对象的位置
+        text_rect.center = (Num_Mark_Width + CELL_WIDTH // 2 + t * CELL_WIDTH,
+                            Num_Mark_Width // 2)
+        # 将文本对象绘制到屏幕上
+        screen.blit(text, text_rect)
     return
 
 
 # 向棋盘格子写入数据，当str2write为None时，则清空格子
-def write_str2cell(draw_pen: turtle.Pen, row: int,  col: int,
+def write_str2cell(screen: pygame.Surface, row: int,  col: int,
                    str2write: str = None):
-    if write_2_cell:
-        fill_color = False
-        if (col + row) % 2 == 0:
-            # 如果x+y是偶数，则格子是涂色格
-            fill_color = True 
-        board_long = BOARD_SIZE * CELL_WIDTH
-        start_x = -1 * board_long / 2 + CELL_WIDTH / 2
-        start_y = board_long / 2 - CELL_WIDTH / 2
-        
-        # 填入数字
-        col = col - 1
-        row = row - 1
-        
-        # 清空格内文字
-        draw_pen.up()
-        draw_pen.setposition(start_x + col * CELL_WIDTH,
-                            start_y - CELL_WIDTH * row)
-        draw_pen.down()
-        draw_cell(draw_pen, fill_color)
-        if str2write is not None:
-            # 写入文字
-            draw_pen.up()
-            draw_pen.setposition(start_x + col * CELL_WIDTH,
-                                start_y - CELL_WIDTH * row - 15)
-            draw_pen.down()
-            if fill_color is True:
-                draw_pen.pencolor(BG_COLOR)
-            else:
-                draw_pen.pencolor(BOARD_COLOR)
-            draw_pen.write(str2write,
-                        font=('Times New Roman', 20, 'bold'),
-                        align="center")
-            draw_pen.color = BOARD_COLOR
-    turtle.update()
+    if (row + col) % 2 == 0:
+        color = DARK_COLOR  # 深色格子
+    else:
+        color = LIGHT_COLOR # 浅色格子
+    # 填入数字
+    col = col - 1
+    row = row - 1
+    font = pygame.font.Font(None, NUMBER_MARK_SIZE)
+    if str2write is not None:
+        # 写入文字
+        # 创建文本对象
+        text = font.render(str2write, True, color)
+        # 获取文本对象的矩形
+        text_rect = text.get_rect()
+        # 设置文本对象的位置
+        text_rect.center = (Num_Mark_Width + BORDER_WIDTH + CELL_WIDTH // 2 + col * CELL_WIDTH,
+                            Num_Mark_Width + BORDER_WIDTH + CELL_WIDTH // 2 + row * CELL_WIDTH)
+        # 将文本对象绘制到屏幕上
+        screen.blit(text, text_rect)
     return
 
-
-# 骑士跳动规则定义
-KNIGHT_JUNMP_RULE = ([-1, 2], [-2, 1], [-2, -1], [-1, -2],
-                     [1, -2], [2, -1], [2, 1], [1, 2])
-
-# 骑士跳动，position初始位置int数组（row,col)，direction跳动方向
-# direction取1 ~ 8，从0度角开始为1，逆时针旋转
-# 跳动成功返回新位置，跳动失败返回None
-
-
-def knight_jump(position, direction):
-    new_position = [0, 0]
-    new_position[0] = position[0] + KNIGHT_JUNMP_RULE[direction - 1][0]
-    new_position[1] = position[1] + KNIGHT_JUNMP_RULE[direction - 1][1]
-    if new_position[0] < 1 or new_position[0] > BOARD_SIZE:
-        new_position = None
-    else:
-        if new_position[1] < 1 or new_position[1] > BOARD_SIZE:
-            new_position = None
-    return new_position
+def draw_step_list(screen: pygame.Surface, step_list):
+    draw_blank_chess_board(screen, BOARD_SIZE)
+    if len(step_list) > 0:
+        i = 0
+        while i < len(step_list):
+            write_str2cell(screen, step_list[i][0],
+                           step_list[i][1],
+                           str(i) if i > 0 else "K")
+            i = i + 1
+    return
